@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnimeGrids | team7pirates</title>
+    <style>
+        /* THE "ARCANE" AESTHETIC: DARK VOID & TEAM7 ORANGE */
+        :root {
+            --bg-color: #0d0d0d;
+            --grid-bg: #1a1a1a;
+            --accent: #ff4500; /* team7pirates Orange */
+            --text: #ffffff;
+            --border: #333;
+            --rarity-unicorn: #ff00ff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 { font-style: italic; letter-spacing: 2px; color: var(--accent); }
+
+        /* THE GRID */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 80px 1fr 1fr 1fr; /* First col is labels */
+            gap: 10px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .cell {
+            aspect-ratio: 1/1;
+            background: var(--grid-bg);
+            border: 2px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: 0.2s;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+
+        .cell:hover { border-color: var(--accent); }
+
+        /* LABELS (Rows & Cols) */
+        .label {
+            background: none;
+            border: none;
+            cursor: default;
+            font-weight: bold;
+            color: #888;
+        }
+
+        /* SEARCH POPUP (MODAL) */
+        #searchModal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #222;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid var(--accent);
+        }
+
+        #searchInput {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            border: 1px solid #444;
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        .results-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .result-item {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+        }
+
+        .result-item:hover { background: var(--accent); }
+
+        /* SUCCESS STATE */
+        .correct { background: #222; border-color: var(--accent); font-weight: bold; color: var(--accent); }
+        .correct img { width: 100%; height: 100%; object-fit: cover; position: absolute; opacity: 0.5; }
+        .char-name { z-index: 2; text-shadow: 2px 2px 4px black; }
+    </style>
+</head>
+<body>
+
+    <h1>ANIMEGRIDS</h1>
+    <p>Daily Challenge by team7pirates</p>
+
+    <div class="grid-container" id="grid">
+        <div class="cell label"></div>
+        <div class="cell label">Captain</div>
+        <div class="cell label">Top Tier Title</div>
+        <div class="cell label">Died</div>
+
+        <div class="cell label">One Piece</div>
+        <div class="cell" onclick="openSearch(0, 0)" id="cell-0-0">?</div>
+        <div class="cell" onclick="openSearch(0, 1)" id="cell-0-1">?</div>
+        <div class="cell" onclick="openSearch(0, 2)" id="cell-0-2">?</div>
+
+        <div class="cell label">Naruto</div>
+        <div class="cell" onclick="openSearch(1, 0)" id="cell-1-0">?</div>
+        <div class="cell" onclick="openSearch(1, 1)" id="cell-1-1">?</div>
+        <div class="cell" onclick="openSearch(1, 2)" id="cell-1-2">?</div>
+
+        <div class="cell label">JJK</div>
+        <div class="cell" onclick="openSearch(2, 0)" id="cell-2-0">?</div>
+        <div class="cell" onclick="openSearch(2, 1)" id="cell-2-1">?</div>
+        <div class="cell" onclick="openSearch(2, 2)" id="cell-2-2">?</div>
+    </div>
+
+    <div id="searchModal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Who is it?</h2>
+            <input type="text" id="searchInput" placeholder="Search character..." autocomplete="off">
+            <div class="results-list" id="resultsList"></div>
+            <button onclick="closeSearch()" style="margin-top:10px; background:none; color:#777; border:none; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // DATABASE (The Brain)
+        // This is where your Spreadsheet data will eventually live
+        const characterData = [
+            { name: "Monkey D. Luffy", series: "One Piece", traits: ["Captain", "Top Tier Title"] },
+            { name: "Trafalgar Law", series: "One Piece", traits: ["Captain", "Top Tier Title"] },
+            { name: "Portgas D. Ace", series: "One Piece", traits: ["Died"] },
+            { name: "Minato Namikaze", series: "Naruto", traits: ["Captain", "Top Tier Title", "Died"] },
+            { name: "Itachi Uchiha", series: "Naruto", traits: ["Died"] },
+            { name: "Satoru Gojo", series: "JJK", traits: ["Top Tier Title", "Died"] },
+            { name: "Suguru Geto", series: "JJK", traits: ["Captain", "Top Tier Title", "Died"] }
+        ];
+
+        const rowLabels = ["One Piece", "Naruto", "JJK"];
+        const colLabels = ["Captain", "Top Tier Title", "Died"];
+
+        let activeRow = null;
+        let activeCol = null;
+
+        // OPEN SEARCH
+        function openSearch(row, col) {
+            activeRow = row;
+            activeCol = col;
+            document.getElementById('modalTitle').innerText = `${rowLabels[row]} + ${colLabels[col]}`;
+            document.getElementById('searchModal').style.display = 'flex';
+            document.getElementById('searchInput').focus();
+        }
+
+        function closeSearch() {
+            document.getElementById('searchModal').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('resultsList').innerHTML = '';
+        }
+
+        // SEARCH LOGIC (Autocomplete)
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const val = e.target.value.toLowerCase();
+            const list = document.getElementById('resultsList');
+            list.innerHTML = '';
+
+            if (val.length < 1) return;
+
+            const matches = characterData.filter(c => c.name.toLowerCase().includes(val));
+            matches.forEach(char => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerText = char.name;
+                item.onclick = () => submitGuess(char);
+                list.appendChild(item);
+            });
+        });
+
+        // SUBMIT GUESS (The "Unlimited" Logic)
+        function submitGuess(character) {
+            const targetSeries = rowLabels[activeRow];
+            const targetTrait = colLabels[activeCol];
+
+            const isCorrect = (character.series === targetSeries && character.traits.includes(targetTrait));
+
+            if (isCorrect) {
+                const cell = document.getElementById(`cell-${activeRow}-${activeCol}`);
+                cell.innerHTML = `<div class="char-name">${character.name}</div>`;
+                cell.classList.add('correct');
+                closeSearch();
+            } else {
+                // UNLIMITED GUESSES: Just clear and shake (optional)
+                document.getElementById('searchInput').value = '';
+                document.getElementById('searchInput').placeholder = "Wrong! Try again...";
+            }
+        }
+    </script>
+</body>
+</html>
