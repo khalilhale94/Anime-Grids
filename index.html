@@ -4,176 +4,175 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnimeGrids | team7pirates</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* THE "ARCANE" AESTHETIC: DARK VOID & TEAM7 ORANGE */
+        /* THE "ARCANE" AESTHETIC */
         :root {
-            --bg-color: #0d0d0d;
-            --grid-bg: #1a1a1a;
+            --bg: #0a0a0a;
+            --card: #151515;
             --accent: #ff4500; /* team7pirates Orange */
-            --text: #ffffff;
-            --border: #333;
-            --rarity-unicorn: #ff00ff;
+            --rarity-unicorn: #f0f;
+            --text: #eee;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg);
             color: var(--text);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 0;
             padding: 20px;
+            margin: 0;
         }
 
-        h1 { font-style: italic; letter-spacing: 2px; color: var(--accent); }
+        h1 { font-style: italic; color: var(--accent); text-transform: uppercase; letter-spacing: 4px; }
 
         /* THE GRID */
-        .grid-container {
+        .grid {
             display: grid;
-            grid-template-columns: 80px 1fr 1fr 1fr; /* First col is labels */
-            gap: 10px;
+            grid-template-columns: 80px repeat(3, 1fr);
+            gap: 12px;
             width: 100%;
             max-width: 500px;
+            margin-top: 20px;
         }
 
         .cell {
             aspect-ratio: 1/1;
-            background: var(--grid-bg);
-            border: 2px solid var(--border);
+            background: var(--card);
+            border: 2px solid #222;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            position: relative;
-            transition: 0.2s;
             text-align: center;
-            font-size: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            font-size: 0.75rem;
+            transition: 0.3s;
         }
 
-        .cell:hover { border-color: var(--accent); }
+        .cell:hover:not(.label) { border-color: var(--accent); transform: scale(1.02); }
 
-        /* LABELS (Rows & Cols) */
-        .label {
-            background: none;
-            border: none;
-            cursor: default;
-            font-weight: bold;
-            color: #888;
-        }
+        .label { cursor: default; background: none; border: none; font-weight: bold; color: #666; font-size: 0.8rem; }
 
-        /* SEARCH POPUP (MODAL) */
+        /* MODAL POPUP */
         #searchModal {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            z-index: 100;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            z-index: 999;
             justify-content: center;
             align-items: center;
         }
 
-        .modal-content {
-            background: #222;
-            padding: 20px;
-            border-radius: 10px;
+        .modal-box {
+            background: #111;
+            padding: 25px;
             width: 90%;
             max-width: 400px;
-            border: 1px solid var(--accent);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
         }
 
-        #searchInput {
+        input {
             width: 100%;
-            padding: 12px;
-            background: #111;
-            border: 1px solid #444;
+            padding: 15px;
+            background: #000;
+            border: 1px solid #333;
             color: white;
             font-size: 1rem;
             box-sizing: border-box;
+            outline: none;
         }
 
-        .results-list {
-            margin-top: 10px;
-            max-height: 200px;
-            overflow-y: auto;
+        input:focus { border-color: var(--accent); }
+
+        .results { margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        .res-item { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; }
+        .res-item:hover { background: var(--accent); color: white; }
+
+        /* SUCCESS STATES */
+        .correct { border-color: var(--accent); background: #000; font-weight: bold; }
+        .rarity-tag {
+            position: absolute;
+            bottom: 5px;
+            font-size: 0.6rem;
+            background: rgba(0,0,0,0.8);
+            padding: 2px 5px;
+            border-radius: 4px;
         }
-
-        .result-item {
-            padding: 10px;
-            border-bottom: 1px solid #333;
-            cursor: pointer;
+        
+        /* UNICORN GLITCH ANIMATION */
+        .unicorn { border-color: var(--rarity-unicorn); color: var(--rarity-unicorn); animation: glitch 0.3s infinite; }
+        @keyframes glitch {
+            0% { transform: translate(0); text-shadow: 2px 0 red; }
+            20% { transform: translate(-2px, 2px); text-shadow: -2px 0 blue; }
+            100% { transform: translate(0); }
         }
-
-        .result-item:hover { background: var(--accent); }
-
-        /* SUCCESS STATE */
-        .correct { background: #222; border-color: var(--accent); font-weight: bold; color: var(--accent); }
-        .correct img { width: 100%; height: 100%; object-fit: cover; position: absolute; opacity: 0.5; }
-        .char-name { z-index: 2; text-shadow: 2px 2px 4px black; }
     </style>
 </head>
 <body>
 
-    <h1>ANIMEGRIDS</h1>
-    <p>Daily Challenge by team7pirates</p>
+    <h1>AnimeGrids</h1>
+    <div style="color: #555; font-size: 0.8rem; margin-bottom: 20px;">Powered by team7pirates</div>
 
-    <div class="grid-container" id="grid">
+    <div class="grid" id="mainGrid">
         <div class="cell label"></div>
         <div class="cell label">Captain</div>
         <div class="cell label">Top Tier Title</div>
         <div class="cell label">Died</div>
 
         <div class="cell label">One Piece</div>
-        <div class="cell" onclick="openSearch(0, 0)" id="cell-0-0">?</div>
-        <div class="cell" onclick="openSearch(0, 1)" id="cell-0-1">?</div>
-        <div class="cell" onclick="openSearch(0, 2)" id="cell-0-2">?</div>
+        <div class="cell" id="c0-0" onclick="openSearch(0,0)">?</div>
+        <div class="cell" id="c0-1" onclick="openSearch(0,1)">?</div>
+        <div class="cell" id="c0-2" onclick="openSearch(0,2)">?</div>
 
         <div class="cell label">Naruto</div>
-        <div class="cell" onclick="openSearch(1, 0)" id="cell-1-0">?</div>
-        <div class="cell" onclick="openSearch(1, 1)" id="cell-1-1">?</div>
-        <div class="cell" onclick="openSearch(1, 2)" id="cell-1-2">?</div>
+        <div class="cell" id="c1-0" onclick="openSearch(1,0)">?</div>
+        <div class="cell" id="c1-1" onclick="openSearch(1,1)">?</div>
+        <div class="cell" id="c1-2" onclick="openSearch(1,2)">?</div>
 
         <div class="cell label">JJK</div>
-        <div class="cell" onclick="openSearch(2, 0)" id="cell-2-0">?</div>
-        <div class="cell" onclick="openSearch(2, 1)" id="cell-2-1">?</div>
-        <div class="cell" onclick="openSearch(2, 2)" id="cell-2-2">?</div>
+        <div class="cell" id="c2-0" onclick="openSearch(2,0)">?</div>
+        <div class="cell" id="c2-1" onclick="openSearch(2,1)">?</div>
+        <div class="cell" id="c2-2" onclick="openSearch(2,2)">?</div>
     </div>
 
     <div id="searchModal">
-        <div class="modal-content">
-            <h2 id="modalTitle">Who is it?</h2>
-            <input type="text" id="searchInput" placeholder="Search character..." autocomplete="off">
-            <div class="results-list" id="resultsList"></div>
-            <button onclick="closeSearch()" style="margin-top:10px; background:none; color:#777; border:none; cursor:pointer;">Cancel</button>
+        <div class="modal-box">
+            <h3 id="modalTitle" style="margin-top:0; color:var(--accent)">Search</h3>
+            <input type="text" id="searchInput" placeholder="Type character name..." autocomplete="off">
+            <div class="results" id="results"></div>
+            <p onclick="closeSearch()" style="color:#444; cursor:pointer; font-size:0.8rem; margin-top:15px; text-align:center;">Cancel</p>
         </div>
     </div>
 
     <script>
-        // DATABASE (The Brain)
-        // This is where your Spreadsheet data will eventually live
-        const characterData = [
-            { name: "Monkey D. Luffy", series: "One Piece", traits: ["Captain", "Top Tier Title"] },
-            { name: "Trafalgar Law", series: "One Piece", traits: ["Captain", "Top Tier Title"] },
-            { name: "Portgas D. Ace", series: "One Piece", traits: ["Died"] },
-            { name: "Minato Namikaze", series: "Naruto", traits: ["Captain", "Top Tier Title", "Died"] },
-            { name: "Itachi Uchiha", series: "Naruto", traits: ["Died"] },
-            { name: "Satoru Gojo", series: "JJK", traits: ["Top Tier Title", "Died"] },
-            { name: "Suguru Geto", series: "JJK", traits: ["Captain", "Top Tier Title", "Died"] }
-        ];
+        // --- 1. CONFIG ---
+        const SB_URL = 'https://ghqjuivxuaavcpwoohpg.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdocWp1aXZ4dWFhdmNwd29vaHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTQ1MjcsImV4cCI6MjA4ODczMDUyN30.URpK-EcM2EXdSdD9qepqSuyhz1z2QdPCMZsB0Hh_S8w';
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        const rowLabels = ["One Piece", "Naruto", "JJK"];
-        const colLabels = ["Captain", "Top Tier Title", "Died"];
+        const rows = ["One Piece", "Naruto", "JJK"];
+        const cols = ["Captain", "Top Tier Title", "Died"];
+        let characters = [];
+        let curR = 0, curC = 0;
 
-        let activeRow = null;
-        let activeCol = null;
+        // --- 2. LOAD DATA ---
+        async function init() {
+            const { data } = await supabase.from('characters').select('*');
+            characters = data || [];
+        }
+        init();
 
-        // OPEN SEARCH
-        function openSearch(row, col) {
-            activeRow = row;
-            activeCol = col;
-            document.getElementById('modalTitle').innerText = `${rowLabels[row]} + ${colLabels[col]}`;
+        // --- 3. UI LOGIC ---
+        function openSearch(r, c) {
+            curR = r; curC = c;
+            document.getElementById('modalTitle').innerText = `${rows[r]} x ${cols[c]}`;
             document.getElementById('searchModal').style.display = 'flex';
             document.getElementById('searchInput').focus();
         }
@@ -181,44 +180,64 @@
         function closeSearch() {
             document.getElementById('searchModal').style.display = 'none';
             document.getElementById('searchInput').value = '';
-            document.getElementById('resultsList').innerHTML = '';
+            document.getElementById('results').innerHTML = '';
         }
 
-        // SEARCH LOGIC (Autocomplete)
-        document.getElementById('searchInput').addEventListener('input', function(e) {
+        document.getElementById('searchInput').addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
-            const list = document.getElementById('resultsList');
+            const list = document.getElementById('results');
             list.innerHTML = '';
-
             if (val.length < 1) return;
 
-            const matches = characterData.filter(c => c.name.toLowerCase().includes(val));
-            matches.forEach(char => {
-                const item = document.createElement('div');
-                item.className = 'result-item';
-                item.innerText = char.name;
-                item.onclick = () => submitGuess(char);
-                list.appendChild(item);
+            characters.filter(char => char.name.toLowerCase().includes(val)).forEach(char => {
+                const div = document.createElement('div');
+                div.className = 'res-item';
+                div.innerText = char.name;
+                div.onclick = () => handleGuess(char);
+                list.appendChild(div);
             });
         });
 
-        // SUBMIT GUESS (The "Unlimited" Logic)
-        function submitGuess(character) {
-            const targetSeries = rowLabels[activeRow];
-            const targetTrait = colLabels[activeCol];
+        // --- 4. THE ENGINE (Guesses & Rarity) ---
+        async function handleGuess(char) {
+            const targetRow = rows[curR];
+            const targetCol = cols[curC];
+            const squareId = `r${curR}c${curC}`;
 
-            const isCorrect = (character.series === targetSeries && character.traits.includes(targetTrait));
+            // Check correctness
+            const matchesSeries = (char.series === targetRow);
+            const matchesTrait = (char.traits && char.traits.includes(targetCol)) || 
+                                 (char.milestones && char.milestones.includes(targetCol));
 
-            if (isCorrect) {
-                const cell = document.getElementById(`cell-${activeRow}-${activeCol}`);
-                cell.innerHTML = `<div class="char-name">${character.name}</div>`;
+            if (matchesSeries && matchesTrait) {
+                const cell = document.getElementById(`c${curR}-${curC}`);
+                cell.innerHTML = `<span style="z-index:2">${char.name}</span>`;
                 cell.classList.add('correct');
+                
+                // Track guess in Supabase
+                await supabase.rpc('increment_guess', { s_id: squareId, c_name: char.name });
+                
+                // Calculate Rarity (Demo math)
+                const rarity = await getRarity(squareId, char.name);
+                const rTag = document.createElement('div');
+                rTag.className = 'rarity-tag';
+                rTag.innerText = rarity + '%';
+                cell.appendChild(rTag);
+                if (parseFloat(rarity) <= 0.05) cell.classList.add('unicorn');
+
                 closeSearch();
             } else {
-                // UNLIMITED GUESSES: Just clear and shake (optional)
                 document.getElementById('searchInput').value = '';
-                document.getElementById('searchInput').placeholder = "Wrong! Try again...";
+                document.getElementById('searchInput').placeholder = "Try again...";
             }
+        }
+
+        async function getRarity(s_id, c_name) {
+            const { data } = await supabase.from('global_stats').select('guess_count').eq('square_id', s_id);
+            const total = data.reduce((acc, curr) => acc + curr.guess_count, 0);
+            const charData = data.find(d => d.char_name === c_name);
+            const charCount = charData ? charData.guess_count : 1;
+            return ((charCount / total) * 100).toFixed(2);
         }
     </script>
 </body>
