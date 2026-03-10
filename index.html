@@ -155,7 +155,7 @@
         // --- 1. CONFIG ---
         const SB_URL = 'https://ghqjuivxuaavcpwoohpg.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdocWp1aXZ4dWFhdmNwd29vaHBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTQ1MjcsImV4cCI6MjA4ODczMDUyN30.URpK-EcM2EXdSdD9qepqSuyhz1z2QdPCMZsB0Hh_S8w';
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        const sb = supabase.createClient(SB_URL, SB_KEY);
 
         const rows = ["One Piece", "Naruto", "JJK"];
         const cols = ["Captain", "Top Tier Title", "Died"];
